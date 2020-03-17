@@ -41,7 +41,7 @@ class EolHomework():
         self.homeworkname = ''
         self.id = ''
         self.idnamedict = []
-
+	self.content = ''
         self.showcontent = []
 
 
@@ -141,6 +141,7 @@ class EolHomework():
                 if logintext.url == 'http://eol.bnuz.edu.cn/meol/personal.do':
                     self.chinesename = (re.findall(r'class="login-text">\s*<span>(.*)</span>', logintext.text))[0]
                     print(self.chinesename + '同学：')
+		    self.content += self.chinesename + '同学：'
                     self.GetHomeworkList()
                 else:
                     print('账号或密码错误')
@@ -180,7 +181,7 @@ class EolHomework():
                     self.homeworkname = re.findall(r'hw"\s*target="_blank">\s*(.*)</a>\s*</li>', homeworktext.text)
 
                     print("你有" + num[0] + "门课需要提交作业",end="\n\n")
-
+		    self.content+="你有" + num[0] + "门课需要提交作业\n"
                     # 未完成作业课程id
                     self.id = re.findall(r'id=(\d{5})&t=hw', homeworktext.text)
 
@@ -191,6 +192,7 @@ class EolHomework():
                     self.GetHomeworkDetail()
                 else:
                     print("你没有需要提交的课程作业",end="\n\n")
+		    self.content+="你没有需要提交的课程作业\n";
             else:
                 print('homeworktext请求失败')
             self.Loginout()
@@ -281,7 +283,7 @@ class EolHomework():
             # show未完成作业列表
             for text in self.showcontent:
                 print(text+'\n')
-
+		self.content+=text+'\n';
         except ZeroDivisionError as e:
             print('except:', e)
 
@@ -301,6 +303,38 @@ class EolHomework():
                 print('登出失败')
         except ZeroDivisionError as e:
             print('except:', e)
+    def sendEmail(self):
+        msg_from = ''  # 发送方邮箱
+        passwd = ''  # 填入发送方邮箱的授权码(填入自己的授权码，相当于邮箱密码)
+        msg_to = ['']  # 收件人邮箱
+
+        subject = "作业通知"  # 主题
+        # content = "邮件内容，我是邮件内容，哈哈哈"
+        # 生成一个MIMEText对象（还有一些其它参数）
+        # _text_:邮件内容
+        content=self.content
+        msg = MIMEText(content)
+        # 放入邮件主题
+        msg['Subject'] = subject
+        # 也可以这样传参
+        # msg['Subject'] = Header(subject, 'utf-8')
+        # 放入发件人
+        msg['From'] = msg_from
+        # 放入收件人
+        msg['To'] = ''
+        # msg['To'] = '发给你的邮件啊'
+        try:
+            # 通过ssl方式发送，服务器地址，端口
+            s = smtplib.SMTP_SSL("smtp.qq.com", 465)
+            # 登录到邮箱
+            s.login(msg_from, passwd)
+            # 发送邮件：发送方，收件方，要发送的消息
+            s.sendmail(msg_from, msg_to, msg.as_string())
+            print('成功')
+        except s.SMTPException as e:
+            print(e)
+        finally:
+            s.quit()
 
 
 
@@ -309,5 +343,6 @@ if __name__ == '__main__':
     timeout = 10
     eol = EolHomework(timeout, url)
     eol.__main__()
+    eol.sendEmail()
 
 
