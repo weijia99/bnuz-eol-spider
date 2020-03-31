@@ -4,6 +4,7 @@ import requests
 from bs4 import BeautifulSoup
 import re
 import time
+from lxml import etree
 # import sys
 # import os
 
@@ -132,7 +133,17 @@ class EolHomework():
             }
             # 登录
             logintext = self.web.post(loginurl, data=payload, headers=self.headers, timeout=self.timeout)
-            
+            data = homeworktext.content.decode('GB2312')
+            html = etree.HTML(data)
+            # 进行解码
+            homew_name = html.xpath('//*[@id="reminder"]/li[2]/ul/li')
+            hlist=[]
+            for i in homew_name:
+                name = i.xpath('./a/text()')
+                name = str(name)
+                name = name.replace(r'\n', '')
+                name = name.replace(' ', '')
+                hlist.append(name)
             # 若请求成功
             if logintext.status_code == 200:
 				# 登录成功
@@ -178,7 +189,7 @@ class EolHomework():
                     # 未完成作业课程数
                     self.homeworknum = num[0]
                     # 未完成作业课程名
-                    self.homeworkname = re.findall(r'hw"\s*target="_blank">\s*(.*)</a>\s*</li>', homeworktext.text)
+                    self.homeworkname = hlist
 
                     print("你有" + num[0] + "门课需要提交作业",end="\n\n")
 		    self.content+="你有" + num[0] + "门课需要提交作业\n"
